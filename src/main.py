@@ -19,7 +19,7 @@ def check(checker: EventChecker):
 
 
 def main():
-    checkers = [TwitterEventChecker(), SiteEventChecker()]
+    checkers = [SiteEventChecker(), TwitterEventChecker()]
 
     for checker in checkers:
         try:
