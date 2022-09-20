@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build .exe",
+            "type": "shell",
+            "command": "pyinstaller --noconfirm --onefile src/main.py",
+            "group": "build"
+        }
+    ]
+}

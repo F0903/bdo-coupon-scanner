@@ -1,4 +1,4 @@
-import snscrape.modules.twitter as t
+import snscrape.twitter as t
 from checker import CODE_REGEX, EventChecker
 from itertools import takewhile
 
@@ -11,7 +11,7 @@ class TwitterEventChecker(EventChecker):
         return "official twitter"
 
     def check_tweet(self, tweet: t.Tweet) -> str | None:
-        text = tweet.content
+        text = tweet.rawContent
         result = CODE_REGEX.search(text)
         if result != None:
             return result.group()
