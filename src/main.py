@@ -10,7 +10,7 @@ def check(checker: EventChecker):
     codes = checker.get_codes()
     end = time.perf_counter_ns()
     total = (end - start) / 1000000
-    if codes is None:
+    if len(codes) == 0:
         print("No codes were found.")
     else:
         print(f"Found codes[{total}ms]:")
