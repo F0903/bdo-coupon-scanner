@@ -1,3 +1,4 @@
+from typing import Iterable
 import snscrape.twitter as t
 from checker import CODE_REGEX, EventChecker
 from itertools import takewhile
@@ -16,14 +17,14 @@ class TwitterEventChecker(EventChecker):
         if result != None:
             return result.group()
 
-    def get_codes(self) -> list[str]:
+    def get_codes(self) -> Iterable[str]:
         profile = t.TwitterUserScraper("NewsBlackDesert")
-        codes = []
+        codes = set()
         for i, item in takewhile(
             lambda x: x[0] < MAX_TWEETS, enumerate(profile.get_items())
         ):
             if isinstance(item, t.Tweet):
                 result = self.check_tweet(item)
                 if result != None:
-                    codes.append(result)
+                    codes.add(result)
         return codes
