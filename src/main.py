@@ -1,10 +1,10 @@
 import time
-from checker import EventChecker
-from site_checker import SiteEventChecker
+from checker import CodeChecker
+from site_checker import OfficialSiteChecker
 from twitter_checker import TwitterEventChecker
 
 
-def check(checker: EventChecker):
+def check(checker: CodeChecker):
     print(f"Searching for {checker.get_checker_name()} codes...")
     start = time.perf_counter_ns()
     codes = checker.get_codes()
@@ -19,7 +19,7 @@ def check(checker: EventChecker):
 
 
 def main():
-    checkers = [SiteEventChecker(), TwitterEventChecker()]
+    checkers = [OfficialSiteChecker(), TwitterEventChecker()]
 
     for checker in checkers:
         try:

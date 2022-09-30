@@ -1,12 +1,29 @@
-from turtle import update
 from typing import Iterable
-from checker import CODE_REGEX, EventChecker
+from datetime import date
+from checker import CODE_REGEX, CodeChecker
 import requests as http
 import bs4 as bs
 from multiprocessing.pool import ThreadPool
 
 
-class SiteEventChecker(EventChecker):
+class OfficialSiteCode:
+    def __init__(self, article_link: str, date: date, code: str):
+        self.article_link = article_link
+        self.date = date
+        self.code = code
+        pass
+
+    def __str__(self) -> str:
+        return f"{self.code} [{self.date} | {self.article_link}]"
+
+
+class ArticleInfo:
+    def __init__(self, article_link: str, date: date):
+        self.article_link = article_link
+        self.date = date
+
+
+class OfficialSiteChecker(CodeChecker):
     def get_checker_name(self) -> str:
         return "official site"
 
@@ -25,15 +42,40 @@ class SiteEventChecker(EventChecker):
                 continue
             yield x
 
-    def get_articles(self) -> Iterable[str]:
+    def parse_date(self, date_str: str) -> date:
+        month_str = date_str[0:3]
+        day_str = date_str[4:6]
+        year_str = date_str[8:12]
+        month = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ].index(month_str) + 1
+        day = int(day_str)
+        year = int(year_str)
+        return date(year, month, day)
+
+    def get_articles(self) -> Iterable[ArticleInfo]:
         html_updates = self.get_articles_list()
         for up in html_updates:
-            url = up.a["href"]
-            yield url
+            container: bs.PageElement = up.a
+            url = container["href"]
+            date_str = container.find_next("span", attrs={"class": "date"})
+            date = self.parse_date(date_str.text)
+            yield ArticleInfo(url, date)
 
     # Check a single event article for code
-    def check_article(self, event_url: str) -> Iterable[str]:
-        response = http.get(event_url)
+    def check_article(self, article_info: ArticleInfo) -> Iterable[OfficialSiteCode]:
+        response = http.get(article_info.article_link)
         response.raise_for_status()
         page = bs.BeautifulSoup(response.text, features="html.parser")
         content_area = page.find("div", attrs={"class": "contents_area editor_area"})
@@ -41,14 +83,18 @@ class SiteEventChecker(EventChecker):
 
         def parse_code_text(text):
             for code in CODE_REGEX.finditer(text):
-                yield code.group()
+                yield OfficialSiteCode(
+                    article_info.article_link, article_info.date, code.group()
+                )
 
         return parse_code_text(span_text)
 
-    def get_codes(self) -> Iterable[str]:
+    def get_codes(self) -> Iterable[OfficialSiteCode]:
         articles = list(self.get_articles())
         code_list = set()
         with ThreadPool(len(articles)) as p:
             for x in p.map(self.check_article, articles):
                 code_list.update(x)
-        return code_list
+        ordered_code_list = list(code_list)
+        ordered_code_list.sort(key=lambda x: x.date, reverse=True)
+        return ordered_code_list

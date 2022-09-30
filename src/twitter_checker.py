@@ -1,13 +1,13 @@
 from typing import Iterable
 import snscrape.twitter as t
-from checker import CODE_REGEX, EventChecker
+from checker import CODE_REGEX, CodeChecker
 from itertools import takewhile
 
 
 MAX_TWEETS = 20
 
 
-class TwitterEventChecker(EventChecker):
+class TwitterEventChecker(CodeChecker):
     def get_checker_name(self) -> str:
         return "official twitter"
 
