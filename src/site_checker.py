@@ -44,8 +44,11 @@ class OfficialSiteChecker(CodeChecker):
 
     def parse_date(self, date_str: str) -> date:
         month_str = date_str[0:3]
-        day_str = date_str[4:6]
-        year_str = date_str[8:12]
+        day_str_offset = 0
+        if date_str[5] == ",":
+            day_str_offset = 1
+        day_str = date_str[4 : 6 - day_str_offset]
+        year_str = date_str[8 - day_str_offset : 12 - day_str_offset]
         month = [
             "Jan",
             "Feb",
@@ -69,8 +72,8 @@ class OfficialSiteChecker(CodeChecker):
         for up in html_updates:
             container: bs.PageElement = up.a
             url = container["href"]
-            date_str = container.find_next("span", attrs={"class": "date"})
-            date = self.parse_date(date_str.text)
+            date_str = container.find_next("span", attrs={"class": "date"}).text
+            date = self.parse_date(date_str)
             yield ArticleInfo(url, date)
 
     # Check a single event article for code
