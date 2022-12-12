@@ -1,5 +1,5 @@
 [project]
-name = "bdo-coupon-scanner"
+name = "bdo_coupon_scanner"
 version = "0.1.0"
 description = "A tool that scans for Black Desert coupon codes across mutliple sites."
 authors = [{ name = "Frederik P.", email = "frepbh@gmail.com" }]
