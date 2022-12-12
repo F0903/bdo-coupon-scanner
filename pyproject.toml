@@ -5,3 +5,6 @@ description = "A tool that scans for Black Desert coupon codes across mutliple s
 authors = [{ name = "Frederik P.", email = "frepbh@gmail.com" }]
 dependencies = ["beautifulsoup4", "requests"]
 requires-python = "<3.11"
+
+[project.scripts]
+bdo_coupon_scanner = "bdo_coupon_scanner"
