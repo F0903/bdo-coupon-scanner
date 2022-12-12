@@ -1,9 +1,9 @@
 from typing import Iterable
 from datetime import date
-from checker import CODE_REGEX, CodeChecker
 import requests as http
 import bs4 as bs
 from multiprocessing.pool import ThreadPool
+from .checker import CODE_REGEX, CodeChecker
 
 
 class OfficialSiteCode:

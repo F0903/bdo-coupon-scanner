@@ -1,7 +1,7 @@
 from typing import Iterable
 import snscrape.modules.twitter as t
-from checker import CODE_REGEX, CodeChecker
 from itertools import takewhile
+from .checker import CODE_REGEX, CodeChecker
 
 
 MAX_TWEETS = 20

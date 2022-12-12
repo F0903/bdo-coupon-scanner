@@ -1,7 +1,7 @@
 import time
-from bdo_coupon_scanner.checker import CodeChecker
-from bdo_coupon_scanner.site_checker import OfficialSiteChecker
-from bdo_coupon_scanner.twitter_checker import TwitterChecker
+from .checker import CodeChecker
+from .site_checker import OfficialSiteChecker
+from .twitter_checker import TwitterChecker
 
 
 def check(checker: CodeChecker):
