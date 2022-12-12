@@ -4,10 +4,9 @@ from itertools import takewhile
 from .checker import CODE_REGEX, CodeChecker
 
 
-MAX_TWEETS = 20
-
-
 class TwitterChecker(CodeChecker):
+    MAX_TWEETS = 20
+
     def get_checker_name(self) -> str:
         return "official twitter"
 
@@ -21,7 +20,7 @@ class TwitterChecker(CodeChecker):
         profile = t.TwitterUserScraper("NewsBlackDesert")
         codes = set()
         for i, item in takewhile(
-            lambda x: x[0] < MAX_TWEETS, enumerate(profile.get_items())
+            lambda x: x[0] < self.MAX_TWEETS, enumerate(profile.get_items())
         ):
             if isinstance(item, t.Tweet):
                 result = self.check_tweet(item)
