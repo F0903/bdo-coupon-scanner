@@ -1,7 +1,7 @@
 import time
 from checker import CodeChecker
 from site_checker import OfficialSiteChecker
-from twitter_checker import TwitterEventChecker
+from twitter_checker import TwitterChecker
 
 
 def check(checker: CodeChecker):
@@ -19,7 +19,7 @@ def check(checker: CodeChecker):
 
 
 def main():
-    checkers = [OfficialSiteChecker(), TwitterEventChecker()]
+    checkers = [OfficialSiteChecker(), TwitterChecker()]
 
     for checker in checkers:
         try:

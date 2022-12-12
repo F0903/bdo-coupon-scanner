@@ -1,5 +1,5 @@
 from typing import Iterable
-import snscrape.twitter as t
+import snscrape.modules.twitter as t
 from checker import CODE_REGEX, CodeChecker
 from itertools import takewhile
 
@@ -7,12 +7,12 @@ from itertools import takewhile
 MAX_TWEETS = 20
 
 
-class TwitterEventChecker(CodeChecker):
+class TwitterChecker(CodeChecker):
     def get_checker_name(self) -> str:
         return "official twitter"
 
     def check_tweet(self, tweet: t.Tweet) -> str | None:
-        text = tweet.rawContent
+        text = tweet.content
         result = CODE_REGEX.search(text)
         if result != None:
             return result.group()
