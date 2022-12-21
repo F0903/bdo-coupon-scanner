@@ -77,7 +77,7 @@ class OfficialSiteChecker(CodeChecker):
         def parse_code_text(text):
             for code in CODE_REGEX.finditer(text):
                 yield CouponCode(
-                    article_info.article_link, article_info.date, code.group()
+                    code.group(), article_info.date, article_info.article_link
                 )
 
         return parse_code_text(span_text)
