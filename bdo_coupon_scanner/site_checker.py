@@ -4,17 +4,7 @@ import requests as http
 import bs4 as bs
 from multiprocessing.pool import ThreadPool
 from .checker import CODE_REGEX, CodeChecker
-
-
-class OfficialSiteCode:
-    def __init__(self, article_link: str, date: date, code: str):
-        self.article_link = article_link
-        self.date = date
-        self.code = code
-        pass
-
-    def __str__(self) -> str:
-        return f"{self.code} [{self.date} | {self.article_link}]"
+from .coupon_code import CouponCode
 
 
 class ArticleInfo:
@@ -77,7 +67,7 @@ class OfficialSiteChecker(CodeChecker):
             yield ArticleInfo(url, date)
 
     # Check a single event article for code
-    def check_article(self, article_info: ArticleInfo) -> Iterable[OfficialSiteCode]:
+    def check_article(self, article_info: ArticleInfo) -> Iterable[CouponCode]:
         response = http.get(article_info.article_link)
         response.raise_for_status()
         page = bs.BeautifulSoup(response.text, features="html.parser")
@@ -86,13 +76,13 @@ class OfficialSiteChecker(CodeChecker):
 
         def parse_code_text(text):
             for code in CODE_REGEX.finditer(text):
-                yield OfficialSiteCode(
+                yield CouponCode(
                     article_info.article_link, article_info.date, code.group()
                 )
 
         return parse_code_text(span_text)
 
-    def get_codes(self) -> Iterable[OfficialSiteCode]:
+    def get_codes(self) -> Iterable[CouponCode]:
         articles = list(self.get_articles())
         code_list = set()
         with ThreadPool(len(articles)) as p:

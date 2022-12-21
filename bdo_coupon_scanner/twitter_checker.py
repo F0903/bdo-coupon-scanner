@@ -2,6 +2,7 @@ from typing import Iterable
 import snscrape.modules.twitter as t
 from itertools import takewhile
 from .checker import CODE_REGEX, CodeChecker
+from .coupon_code import CouponCode
 
 
 class TwitterChecker(CodeChecker):
@@ -10,13 +11,17 @@ class TwitterChecker(CodeChecker):
     def get_checker_name(self) -> str:
         return "official twitter"
 
-    def check_tweet(self, tweet: t.Tweet) -> str | None:
+    def check_tweet(self, tweet: t.Tweet) -> CouponCode | None:
         text = tweet.content
         result = CODE_REGEX.search(text)
-        if result != None:
-            return result.group()
+        if result == None:
+            return None
+        link = tweet.url
+        content = result.group()
+        date = tweet.date.date()
+        return CouponCode(link, date, content)
 
-    def get_codes(self) -> Iterable[str]:
+    def get_codes(self) -> Iterable[CouponCode]:
         profile = t.TwitterUserScraper("NewsBlackDesert")
         codes = set()
         for i, item in takewhile(
