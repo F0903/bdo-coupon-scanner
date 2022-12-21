@@ -1,13 +1,13 @@
 import time
-from .checker import CodeChecker
-from .site_checker import OfficialSiteChecker
-from .twitter_checker import TwitterChecker
+from .scanners.scanner_base import CouponScannerBase
+from .scanners.site_scanner import OfficialSiteScanner
+from .scanners.twitter_scanner import TwitterScanner
 
 
-def check(checker: CodeChecker):
-    print(f"Searching for {checker.get_checker_name()} codes...")
+def scan(scanner: CouponScannerBase):
+    print(f"Running {scanner.get_scanner_name()}")
     start = time.perf_counter_ns()
-    codes = checker.get_codes()
+    codes = scanner.get_codes()
     end = time.perf_counter_ns()
     total = (end - start) / 1000000
     if len(codes) == 0:
@@ -19,11 +19,11 @@ def check(checker: CodeChecker):
 
 
 def main():
-    checkers = [OfficialSiteChecker(), TwitterChecker()]
+    scanners = [OfficialSiteScanner(), TwitterScanner()]
 
-    for checker in checkers:
+    for scanner in scanners:
         try:
-            check(checker)
+            scan(scanner)
             print("\n")
         except Exception as e:
             print(f"Error encountered!:\n{e}\nTrying next...")

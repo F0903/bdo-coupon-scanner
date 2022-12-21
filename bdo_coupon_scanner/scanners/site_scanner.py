@@ -3,8 +3,8 @@ from datetime import date
 import requests as http
 import bs4 as bs
 from multiprocessing.pool import ThreadPool
-from .checker import CODE_REGEX, CodeChecker
-from .coupon_code import CouponCode
+from .scanner_base import CODE_REGEX, CouponScannerBase
+from ..coupon import Coupon
 
 
 class ArticleInfo:
@@ -13,9 +13,9 @@ class ArticleInfo:
         self.date = date
 
 
-class OfficialSiteChecker(CodeChecker):
-    def get_checker_name(self) -> str:
-        return "official site"
+class OfficialSiteScanner(CouponScannerBase):
+    def get_scanner_name(self) -> str:
+        return "Official Site Scanner"
 
     def get_page(self, link: str) -> bs.BeautifulSoup:
         response = http.get(link)
@@ -35,11 +35,11 @@ class OfficialSiteChecker(CodeChecker):
     def parse_date(self, date_str: str) -> date:
         month_str = date_str[0:3]
         day_str_offset = 0
-        if date_str[5] == ",":
+        if date_str[5] == ",":  # If day string is only 1 char
             day_str_offset = 1
         day_str = date_str[4 : 6 - day_str_offset]
         year_str = date_str[8 - day_str_offset : 12 - day_str_offset]
-        month = [
+        MONTHS = [
             "Jan",
             "Feb",
             "Mar",
@@ -52,7 +52,8 @@ class OfficialSiteChecker(CodeChecker):
             "Oct",
             "Nov",
             "Dec",
-        ].index(month_str) + 1
+        ]
+        month = MONTHS.index(month_str) + 1
         day = int(day_str)
         year = int(year_str)
         return date(year, month, day)
@@ -67,7 +68,7 @@ class OfficialSiteChecker(CodeChecker):
             yield ArticleInfo(url, date)
 
     # Check a single event article for code
-    def check_article(self, article_info: ArticleInfo) -> Iterable[CouponCode]:
+    def check_article(self, article_info: ArticleInfo) -> Iterable[Coupon]:
         response = http.get(article_info.article_link)
         response.raise_for_status()
         page = bs.BeautifulSoup(response.text, features="html.parser")
@@ -76,14 +77,12 @@ class OfficialSiteChecker(CodeChecker):
 
         def parse_code_text(text):
             for code in CODE_REGEX.finditer(text):
-                yield CouponCode(
-                    code.group(), article_info.date, article_info.article_link
-                )
+                yield Coupon(code.group(), article_info.date, article_info.article_link)
 
         return parse_code_text(span_text)
 
-    def get_codes(self) -> Iterable[CouponCode]:
-        articles = list(self.get_articles())
+    def get_codes(self) -> Iterable[Coupon]:
+        articles = list(self.get_articles())  # Collect to list to access length
         code_list = set()
         with ThreadPool(len(articles)) as p:
             for x in p.map(self.check_article, articles):

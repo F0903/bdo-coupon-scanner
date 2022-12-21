@@ -1,7 +1,7 @@
 from datetime import date
 
 
-class CouponCode:
+class Coupon:
     def __init__(self, code: str, date: date, origin_link: str):
         self.code = code
         self.date = date
