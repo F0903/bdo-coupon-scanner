@@ -17,9 +17,9 @@ class TwitterChecker(CodeChecker):
         if result == None:
             return None
         link = tweet.url
-        content = result.group()
+        code = result.group()
         date = tweet.date.date()
-        return CouponCode(link, date, content)
+        return CouponCode(code, date, link)
 
     def get_codes(self) -> Iterable[CouponCode]:
         profile = t.TwitterUserScraper("NewsBlackDesert")
