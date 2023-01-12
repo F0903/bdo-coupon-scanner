@@ -13,7 +13,7 @@ class TwitterScanner(CouponScannerBase):
         return "Official Twitter Scanner"
 
     def check_tweet(self, tweet: t.Tweet) -> Coupon | None:
-        log = logging.getLogger(f"{__name__}.site-scanner")
+        log = logging.getLogger(__name__)
         log.debug(f"Scanning tweet: {tweet.url}")
         text = tweet.content
         result = CODE_REGEX.search(text)
@@ -25,7 +25,7 @@ class TwitterScanner(CouponScannerBase):
         return Coupon(code, date, link)
 
     def get_codes(self) -> Iterable[Coupon]:
-        log = logging.getLogger(f"{__name__}.twitter-scanner")
+        log = logging.getLogger(__name__)
         log.debug("Scanning twitter codes...")
         profile = t.TwitterUserScraper("NewsBlackDesert")
         codes = set()
