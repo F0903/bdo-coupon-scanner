@@ -1,5 +1,6 @@
 from typing import Iterable
 from datetime import date
+import logging
 import requests as http
 import bs4 as bs
 from multiprocessing.pool import ThreadPool
@@ -18,11 +19,15 @@ class OfficialSiteScanner(CouponScannerBase):
         return "Official Site Scanner"
 
     def get_page(self, link: str) -> bs.BeautifulSoup:
+        log = logging.getLogger("bdocs.site-scanner")
+        log.debug("Getting site articles webpage...")
         response = http.get(link)
         response.raise_for_status()
         return bs.BeautifulSoup(response.text, features="html.parser")
 
     def get_articles_list(self) -> Iterable[bs.PageElement]:
+        log = logging.getLogger("bdocs.site-scanner")
+        log.debug("Getting articles container...")
         page = self.get_page("https://www.naeu.playblackdesert.com/en-US/News/Notice")
         updates_list = page.find("ul", attrs={"class": "thumb_nail_list"})
         if not updates_list:
@@ -59,6 +64,8 @@ class OfficialSiteScanner(CouponScannerBase):
         return date(year, month, day)
 
     def get_articles(self) -> Iterable[ArticleInfo]:
+        log = logging.getLogger("bdocs.site-scanner")
+        log.debug("Getting all articles...")
         html_updates = self.get_articles_list()
         for up in html_updates:
             container: bs.PageElement = up.a
@@ -69,6 +76,8 @@ class OfficialSiteScanner(CouponScannerBase):
 
     # Check a single event article for code
     def check_article(self, article_info: ArticleInfo) -> Iterable[Coupon]:
+        log = logging.getLogger("bdocs.site-scanner")
+        log.debug(f"Scanning arcticle: {article_info.article_link}")
         response = http.get(article_info.article_link)
         response.raise_for_status()
         page = bs.BeautifulSoup(response.text, features="html.parser")
@@ -82,6 +91,8 @@ class OfficialSiteScanner(CouponScannerBase):
         return parse_code_text(span_text)
 
     def get_codes(self) -> Iterable[Coupon]:
+        log = logging.getLogger("bdocs.site-scanner")
+        log.debug("Scanning for site codes...")
         articles = list(self.get_articles())  # Collect to list to access length
         code_list = set()
         with ThreadPool(len(articles)) as p:

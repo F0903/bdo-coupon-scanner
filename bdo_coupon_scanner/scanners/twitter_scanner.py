@@ -1,4 +1,5 @@
 from typing import Iterable
+import logging
 import snscrape.modules.twitter as t
 from itertools import takewhile
 from .scanner_base import CODE_REGEX, CouponScannerBase
@@ -12,6 +13,8 @@ class TwitterScanner(CouponScannerBase):
         return "Official Twitter Scanner"
 
     def check_tweet(self, tweet: t.Tweet) -> Coupon | None:
+        log = logging.getLogger("bdocs.site-scanner")
+        log.debug(f"Scanning tweet: {tweet.url}")
         text = tweet.content
         result = CODE_REGEX.search(text)
         if result == None:
@@ -22,6 +25,8 @@ class TwitterScanner(CouponScannerBase):
         return Coupon(code, date, link)
 
     def get_codes(self) -> Iterable[Coupon]:
+        log = logging.getLogger("bdocs.twitter-scanner")
+        log.debug("Scanning twitter codes...")
         profile = t.TwitterUserScraper("NewsBlackDesert")
         codes = set()
         for i, item in takewhile(
