@@ -1,4 +1,5 @@
 import time
+import traceback
 from .scanners.scanner_base import CouponScannerBase
 from .scanners.site_scanner import OfficialSiteScanner
 from .scanners.twitter_scanner import TwitterScanner
@@ -26,7 +27,10 @@ def main():
             scan(scanner)
             print("\n")
         except Exception as e:
-            print(f"Error encountered!:\n{e}\nTrying next...")
+            strbuf = ""
+            for s in traceback.format_exception(e):
+                strbuf += s
+            print(f"Error encountered!:\n{strbuf}\nTrying next...")
 
     input("Done!\nPress any key to exit...")
 

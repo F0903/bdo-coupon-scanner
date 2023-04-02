@@ -15,7 +15,7 @@ class TwitterScanner(CouponScannerBase):
     def check_tweet(self, tweet: t.Tweet) -> Coupon | None:
         log = logging.getLogger(__name__)
         log.debug(f"Scanning tweet: {tweet.url}")
-        text = tweet.content
+        text = tweet.rawContent
         result = CODE_REGEX.search(text)
         if result == None:
             return None

@@ -81,7 +81,7 @@ class OfficialSiteScanner(CouponScannerBase):
         response = http.get(article_info.article_link)
         response.raise_for_status()
         page = bs.BeautifulSoup(response.text, features="html.parser")
-        content_area = page.find("div", attrs={"class": "contents_area editor_area"})
+        content_area = page.find("div", attrs={"class": "contents_area"})
         span_text = content_area.get_text()
 
         def parse_code_text(text):
@@ -95,9 +95,11 @@ class OfficialSiteScanner(CouponScannerBase):
         log.debug("Scanning for site codes...")
         articles = list(self.get_articles())  # Collect to list to access length
         code_list = set()
-        with ThreadPool(len(articles)) as p:
+
+        with ThreadPool() as p:
             for x in p.map(self.check_article, articles):
                 code_list.update(x)
+
         ordered_code_list = list(code_list)
         ordered_code_list.sort(key=lambda x: x.date, reverse=True)
         return ordered_code_list
