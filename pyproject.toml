@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "bdo-coupon-scanner"
 description = 'A tool that searches for Black Desert coupons.'
 readme = "README.md"
-requires-python = "<3.11"
 license = "MIT"
 keywords = []
 authors = [{ name = "Frederik P.", email = "frepbh@gmail.com" }]
