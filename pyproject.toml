@@ -1,19 +1,17 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[project]
+[tool.poetry]
 name = "bdo-coupon-scanner"
-description = 'A tool that searches for Black Desert coupons.'
-readme = "README.md"
+version = "0.1.0"
+description = "A library that scans for Black Desert Online coupon codes."
+authors = ["Frederik P. <frepbh@gmail.com>"]
 license = "MIT"
-keywords = []
-authors = [{ name = "Frederik P.", email = "frepbh@gmail.com" }]
-dependencies = ["beautifulsoup4", "requests"]
-dynamic = ["version"]
+readme = "README.md"
 
-[tool.hatch.version]
-path = "bdo_coupon_scanner/__about__.py"
+[tool.poetry.dependencies]
+python = "^3.11"
+bs4 = "^0.0.1"
+snscrape = "^0.7.0.20230622"
 
-[tool.hatch.build.targets.wheel]
-packages = ["bdo_coupon_scanner"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
