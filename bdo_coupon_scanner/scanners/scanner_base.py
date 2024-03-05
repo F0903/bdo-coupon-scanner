@@ -1,6 +1,5 @@
-import re
 from typing import Iterable
-
+import re
 
 CODE_REGEX = re.compile(r"((\w|\d){4})-((\w|\d){4})-((\w|\d){4})-((\w|\d){4})")
 

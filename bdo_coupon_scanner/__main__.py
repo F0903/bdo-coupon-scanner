@@ -2,25 +2,27 @@ import time
 import traceback
 from .scanners.scanner_base import CouponScannerBase
 from .scanners.site_scanner import OfficialSiteScanner
-from .scanners.twitter_scanner import TwitterScanner
+from .scanners.garmoth_scanner import GarmothScanner
+
+""" from .scanners.twitter_scanner import TwitterScanner """
 
 
 def scan(scanner: CouponScannerBase):
     print(f"Running {scanner.get_scanner_name()}")
-    start = time.perf_counter_ns()
+    before_codes = time.perf_counter_ns()
     codes = scanner.get_codes()
-    end = time.perf_counter_ns()
-    total = (end - start) / 1000000
-    if len(codes) == 0:
-        print("No codes were found.")
-    else:
-        print(f"Found codes[{total}ms]:")
-        for x in codes:
-            print(x)
+    after_codes = time.perf_counter_ns()
+    print(f"get_codes took: {(after_codes - before_codes) / 1000000}ms")
+    current = time.perf_counter_ns()
+    for x in codes:
+        now = time.perf_counter_ns()
+        time_taken = now - current
+        current = now
+        print(f"{x} {time_taken / 1000000}ms")
 
 
 def main():
-    scanners = [OfficialSiteScanner(), TwitterScanner()]
+    scanners = [GarmothScanner(), OfficialSiteScanner()]
 
     for scanner in scanners:
         try:

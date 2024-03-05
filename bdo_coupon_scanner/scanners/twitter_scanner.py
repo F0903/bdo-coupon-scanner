@@ -1,4 +1,4 @@
-from typing import Iterable
+""" from typing import Iterable
 import logging
 import snscrape.modules.twitter as t
 from itertools import takewhile
@@ -37,3 +37,4 @@ class TwitterScanner(CouponScannerBase):
                 if result != None:
                     codes.add(result)
         return codes
+ """

@@ -8,6 +8,9 @@ from .scanner_base import CODE_REGEX, CouponScannerBase
 from ..coupon import Coupon
 
 
+BASE_URL = "https://www.naeu.playblackdesert.com/en-US/News/Notice"
+
+
 class ArticleInfo:
     def __init__(self, article_link: str, date: date):
         self.article_link = article_link
@@ -28,7 +31,7 @@ class OfficialSiteScanner(CouponScannerBase):
     def get_articles_list(self) -> Iterable[bs.PageElement]:
         log = logging.getLogger(__name__)
         log.debug("Getting articles container...")
-        page = self.get_page("https://www.naeu.playblackdesert.com/en-US/News/Notice")
+        page = self.get_page(BASE_URL)
         updates_list = page.find("ul", attrs={"class": "thumb_nail_list"})
         if not updates_list:
             raise Exception("Could not find updates list!")
@@ -82,24 +85,19 @@ class OfficialSiteScanner(CouponScannerBase):
         response.raise_for_status()
         page = bs.BeautifulSoup(response.text, features="html.parser")
         content_area = page.find("div", attrs={"class": "contents_area"})
-        span_text = content_area.get_text()
-
-        def parse_code_text(text):
-            for code in CODE_REGEX.finditer(text):
-                yield Coupon(code.group(), article_info.date, article_info.article_link)
-
-        return parse_code_text(span_text)
+        section_text = content_area.get_text()
+        for code in CODE_REGEX.finditer(section_text):
+            yield Coupon(code.group(), article_info.date, article_info.article_link)
 
     def get_codes(self) -> Iterable[Coupon]:
         log = logging.getLogger(__name__)
         log.debug("Scanning for site codes...")
-        articles = list(self.get_articles())  # Collect to list to access length
-        code_list = set()
 
+        articles = self.get_articles()
+        code_list = set()  # Use set to avoid duplicates
         with ThreadPool() as p:
-            for x in p.map(self.check_article, articles):
-                code_list.update(x)
+            for article_coupons in p.map(self.check_article, articles):
+                for coupon in article_coupons:
+                    code_list.update(coupon)
 
-        ordered_code_list = list(code_list)
-        ordered_code_list.sort(key=lambda x: x.date, reverse=True)
-        return ordered_code_list
+        return code_list
