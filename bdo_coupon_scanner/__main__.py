@@ -22,7 +22,7 @@ def scan(scanner: CouponScannerBase):
 
 
 def main():
-    scanners = [GarmothScanner(), OfficialSiteScanner()]
+    scanners = [OfficialSiteScanner(), GarmothScanner()]
 
     for scanner in scanners:
         try:

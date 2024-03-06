@@ -5,6 +5,7 @@ import requests as http
 from queue import Queue
 import bs4 as bs
 import concurrent.futures as futures
+import itertools
 from .scanner_base import CODE_REGEX, CouponScannerBase
 from ..coupon import Coupon
 
@@ -87,8 +88,19 @@ class OfficialSiteScanner(CouponScannerBase):
         page = bs.BeautifulSoup(response.text, features="html.parser")
         content_area = page.find("div", attrs={"class": "contents_area"})
         section_text = content_area.get_text()
-        for code in CODE_REGEX.finditer(section_text):
-            yield Coupon(code.group(), article_info.date, article_info.article_link)
+
+        coupon_queue = Queue()
+        with futures.ThreadPoolExecutor() as executor:
+            for coupon in executor.map(
+                lambda code: Coupon(
+                    code.group(), article_info.date, article_info.article_link
+                ),
+                CODE_REGEX.finditer(section_text),
+            ):
+                coupon_queue.put(coupon)
+
+        coupon_queue.join()
+        return coupon_queue.queue
 
     def get_codes(self) -> Iterable[Coupon]:
         log = logging.getLogger(__name__)
@@ -96,9 +108,8 @@ class OfficialSiteScanner(CouponScannerBase):
 
         articles = self.get_articles()
 
-        coupon_queue = Queue()
+        coupon_chain = []
         with futures.ThreadPoolExecutor() as executor:
             for coupons in executor.map(self.check_article, articles):
-                executor.map(coupon_queue.put, coupons)
-        coupon_queue.join()
-        return coupon_queue.queue
+                coupon_chain = itertools.chain(coupon_chain, coupons)
+        return coupon_chain
