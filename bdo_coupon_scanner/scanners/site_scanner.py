@@ -2,8 +2,9 @@ from typing import Iterable
 from datetime import date
 import logging
 import requests as http
+from queue import Queue
 import bs4 as bs
-from multiprocessing.pool import ThreadPool
+import concurrent.futures as futures
 from .scanner_base import CODE_REGEX, CouponScannerBase
 from ..coupon import Coupon
 
@@ -94,10 +95,10 @@ class OfficialSiteScanner(CouponScannerBase):
         log.debug("Scanning for site codes...")
 
         articles = self.get_articles()
-        code_list = set()  # Use set to avoid duplicates
-        with ThreadPool() as p:
-            for article_coupons in p.map(self.check_article, articles):
-                for coupon in article_coupons:
-                    code_list.update(coupon)
 
-        return code_list
+        coupon_queue = Queue()
+        with futures.ThreadPoolExecutor() as executor:
+            for coupons in executor.map(self.check_article, articles):
+                executor.map(coupon_queue.put, coupons)
+        coupon_queue.join()
+        return coupon_queue.queue
