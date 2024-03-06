@@ -90,17 +90,13 @@ class OfficialSiteScanner(CouponScannerBase):
         content_area = page.find("div", attrs={"class": "contents_area"})
         section_text = content_area.get_text()
 
-        coupon_queue = Queue()
         with futures.ThreadPoolExecutor() as executor:
-            for coupon in executor.map(
+            return executor.map(
                 lambda code: Coupon(
                     code.group(), article_info.date, article_info.article_link
                 ),
                 CODE_REGEX.finditer(section_text),
-            ):
-                coupon_queue.put(coupon)
-        coupon_queue.join()
-        return coupon_queue.queue
+            )
 
     def get_codes(self) -> Iterable[Coupon]:
         try:
