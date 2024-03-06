@@ -6,6 +6,7 @@ from queue import Queue
 import bs4 as bs
 import concurrent.futures as futures
 import itertools
+from .scanner_error import ScannerTimeoutError, ScannerError
 from .scanner_base import CODE_REGEX, CouponScannerBase
 from ..coupon import Coupon
 
@@ -98,18 +99,22 @@ class OfficialSiteScanner(CouponScannerBase):
                 CODE_REGEX.finditer(section_text),
             ):
                 coupon_queue.put(coupon)
-
         coupon_queue.join()
         return coupon_queue.queue
 
     def get_codes(self) -> Iterable[Coupon]:
-        log = logging.getLogger(__name__)
-        log.debug("Scanning for site codes...")
+        try:
+            log = logging.getLogger(__name__)
+            log.debug("Scanning for site codes...")
 
-        articles = self.get_articles()
+            articles = self.get_articles()
+            coupon_chain = []
 
-        coupon_chain = []
-        with futures.ThreadPoolExecutor() as executor:
-            for coupons in executor.map(self.check_article, articles):
-                coupon_chain = itertools.chain(coupon_chain, coupons)
-        return coupon_chain
+            with futures.ThreadPoolExecutor() as executor:
+                for coupons in executor.map(self.check_article, articles):
+                    coupon_chain = itertools.chain(coupon_chain, coupons)
+            return coupon_chain
+        except TimeoutError:
+            raise ScannerTimeoutError
+        except Exception:
+            raise ScannerError

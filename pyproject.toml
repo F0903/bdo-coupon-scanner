@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bdo-coupon-scanner"
-version = "0.4.2"
+version = "0.4.3"
 description = "A library that scans for Black Desert Online coupon codes."
 authors = ["Frederik P. <frepbh@gmail.com>"]
 license = "MIT"
