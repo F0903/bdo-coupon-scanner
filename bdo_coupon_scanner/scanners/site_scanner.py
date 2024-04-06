@@ -2,7 +2,6 @@ from typing import Iterable
 from datetime import date
 import logging
 import requests as http
-from queue import Queue
 import bs4 as bs
 import concurrent.futures as futures
 import itertools
