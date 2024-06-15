@@ -79,7 +79,7 @@ class OfficialSiteScanner(CouponScannerBase):
             date = self.parse_date(date_str)
             yield ArticleInfo(url, date)
 
-    # Check a single event article for code
+    # Check a single event article for codes
     def check_article(self, article_info: ArticleInfo) -> Iterable[Coupon]:
         log = logging.getLogger(__name__)
         log.debug(f"Scanning arcticle: {article_info.article_link}")
@@ -88,23 +88,19 @@ class OfficialSiteScanner(CouponScannerBase):
         page = bs.BeautifulSoup(response.text, features="html.parser")
         content_area = page.find("div", attrs={"class": "contents_area"})
         section_text = content_area.get_text()
-
-        with futures.ThreadPoolExecutor() as executor:
-            return executor.map(
-                lambda code: Coupon(
-                    code.group(), article_info.date, article_info.article_link
-                ),
-                CODE_REGEX.finditer(section_text),
+        codes = []
+        for code in CODE_REGEX.finditer(section_text):
+            codes.append(
+                Coupon(code.group(), article_info.date, article_info.article_link)
             )
+        return codes
 
     def get_codes(self) -> Iterable[Coupon]:
         try:
             log = logging.getLogger(__name__)
             log.debug("Scanning for site codes...")
-
             articles = self.get_articles()
             coupon_chain = []
-
             with futures.ThreadPoolExecutor() as executor:
                 for coupons in executor.map(self.check_article, articles):
                     coupon_chain = itertools.chain(coupon_chain, coupons)
