@@ -2,6 +2,7 @@ from typing import Iterable
 import logging
 import datetime
 import selenium.webdriver as web
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from .scanner_base import CouponScannerBase
 from .scanner_error import ScannerError, ScannerTimeoutError
@@ -16,12 +17,13 @@ class GarmothScanner(CouponScannerBase):
 
     def get_codes(self) -> Iterable[Coupon]:
         try:
+            waiter = WebDriverWait()
             log = logging.getLogger(__name__)
             log.debug(f"Scanning Garmoth...")
             firefox_options = web.FirefoxOptions()
             firefox_options.add_argument("--headless")
             with web.Firefox(firefox_options) as browser:
-                browser.implicitly_wait(10)
+                browser.implicitly_wait(45)
                 browser.get(BASE_URL)
                 see_more_button = browser.find_element(
                     By.CSS_SELECTOR, 'a[href="/coupons"]'
