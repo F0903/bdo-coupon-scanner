@@ -17,7 +17,6 @@ class GarmothScanner(CouponScannerBase):
 
     def get_codes(self) -> Iterable[Coupon]:
         try:
-            waiter = WebDriverWait()
             log = logging.getLogger(__name__)
             log.debug(f"Scanning Garmoth...")
             firefox_options = web.FirefoxOptions()
