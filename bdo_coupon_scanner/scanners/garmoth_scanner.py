@@ -21,8 +21,16 @@ class GarmothScanner(CouponScannerBase):
             log.debug(f"Scanning Garmoth...")
             firefox_options = web.FirefoxOptions()
             firefox_options.add_argument("--headless")
+            firefox_options.add_argument("window-size=1280,800")
+            firefox_options.add_argument(
+                "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
+            )
             with web.Firefox(firefox_options) as browser:
-                browser.implicitly_wait(45)
+                browser.implicitly_wait(30)
+                # Remove navigator.webdriver Flag using JavaScript
+                browser.execute_script(
+                    "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+                )
                 browser.get(BASE_URL)
                 see_more_button = browser.find_element(
                     By.CSS_SELECTOR, 'a[href="/coupons"]'
