@@ -1,5 +1,7 @@
 import time
 import traceback
+
+from bdo_coupon_scanner.coupon import ensure_coupon_format
 from .scanners.scanner_base import CouponScannerBase
 from .scanners.site_scanner import OfficialSiteScanner
 from .scanners.garmoth_scanner import GarmothScanner
@@ -22,7 +24,10 @@ def scan(scanner: CouponScannerBase):
 
 
 def main():
-    scanners = [OfficialSiteScanner(), GarmothScanner()]
+    scanners = [
+        OfficialSiteScanner(),
+        GarmothScanner(),
+    ]
 
     for scanner in scanners:
         try:
