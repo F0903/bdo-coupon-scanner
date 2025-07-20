@@ -27,9 +27,10 @@ class GarmothScanner(CouponScannerBase):
                 "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
             )
 
+            WAIT_TIMEOUT = 30  # seconds
             with web.Firefox(firefox_options) as browser:
-                browser.implicitly_wait(30)
-                browser.set_script_timeout(30)
+                browser.set_script_timeout(WAIT_TIMEOUT)
+                browser.implicitly_wait(WAIT_TIMEOUT)
 
                 # Remove navigator.webdriver Flag using JavaScript
                 browser.execute_script(
@@ -39,11 +40,13 @@ class GarmothScanner(CouponScannerBase):
                 browser.get(CODES_URL)
 
                 # If the page has a cookie consent banner, accept it
+                browser.implicitly_wait(1)  # Short wait for cookie check
                 cookie_button = browser.find_elements(
                     By.CSS_SELECTOR, "button#accept-cookies"
                 )
                 if cookie_button:
                     cookie_button[0].click()
+                browser.implicitly_wait(WAIT_TIMEOUT)  # Restore wait
 
                 # The first section is the "Available" section
                 available_coupons_section = browser.find_element(
