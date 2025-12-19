@@ -1,3 +1,4 @@
+import asyncio
 import time
 import traceback
 
@@ -6,10 +7,10 @@ from .scanners.scanner_base import CouponScannerBase
 from .scanners.site_scanner import OfficialSiteScanner
 
 
-def scan(scanner: CouponScannerBase):
+async def scan(scanner: CouponScannerBase):
     print(f"Running {scanner.get_scanner_name()}")
     before_codes = time.perf_counter_ns()
-    codes = scanner.get_codes()
+    codes = await scanner.get_codes()
     after_codes = time.perf_counter_ns()
     print(f"get_codes took: {(after_codes - before_codes) / 1000000}ms")
     current = time.perf_counter_ns()
@@ -20,7 +21,7 @@ def scan(scanner: CouponScannerBase):
         print(f"{x} {time_taken / 1000000}ms")
 
 
-def main():
+async def main():
     scanners = [
         OfficialSiteScanner(),
         GarmothScanner(),
@@ -28,7 +29,7 @@ def main():
 
     for scanner in scanners:
         try:
-            scan(scanner)
+            await scan(scanner)
             print("\n")
         except Exception as e:
             strbuf = ""
@@ -40,4 +41,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

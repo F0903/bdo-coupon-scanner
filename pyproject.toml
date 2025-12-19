@@ -11,6 +11,7 @@ python = ">=3.10 <4.0"
 snscrape = "^0.7.0.2"
 selenium = "^4.36"
 python-dateutil = "^2.9.0.post0"
+aiohttp = "^3.13.2"
 
 [build-system]
 requires = ["poetry-core"]

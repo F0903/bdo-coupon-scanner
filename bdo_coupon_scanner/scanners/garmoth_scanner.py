@@ -1,6 +1,7 @@
+import asyncio
 import logging
-from datetime import datetime
-from typing import Iterable
+from datetime import date
+from typing import Iterable, List
 
 import selenium.webdriver as web
 from selenium.common.exceptions import TimeoutException
@@ -19,7 +20,7 @@ class GarmothScanner(CouponScannerBase):
     def get_scanner_name(self) -> str:
         return "Garmoth Scanner"
 
-    def get_codes(self) -> Iterable[Coupon]:
+    def _get_codes_sync(self) -> List[Coupon]:
         log = logging.getLogger(__name__)
         log.debug("Scanning Garmoth...")
 
@@ -37,7 +38,7 @@ class GarmothScanner(CouponScannerBase):
             firefox_options.page_load_strategy = 'eager'
 
             WAIT_TIMEOUT = 30  # seconds
-            with web.Firefox(firefox_options) as browser:
+            with web.Firefox(options=firefox_options) as browser:
                 # Remove navigator.webdriver Flag using JavaScript
                 browser.execute_script(
                     "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
@@ -63,14 +64,19 @@ class GarmothScanner(CouponScannerBase):
                      log.warning("No coupon containers found on Garmoth.")
                      return []
 
+                codes = []
                 for container in coupon_containers:
                     id_attr = container.get_attribute("id")
                     if not id_attr:
                         continue
-                    yield Coupon(id_attr, datetime.now(), CODES_URL)
+                    codes.append(Coupon(id_attr, date.today(), CODES_URL))
+                return codes
 
         except TimeoutException:
             raise ScannerTimeoutError
         except Exception as e:
             log.error(f"Garmoth scanner failed: {e}")
             raise ScannerError
+
+    async def get_codes(self) -> Iterable[Coupon]:
+        return await asyncio.to_thread(self._get_codes_sync)

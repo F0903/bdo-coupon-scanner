@@ -1,10 +1,10 @@
-import concurrent.futures as futures
+import asyncio
 import logging
 from datetime import date
-from typing import Iterable
+from typing import Iterable, List
 
+import aiohttp
 import bs4 as bs
-import requests as http
 from dateutil import parser as date_parser
 
 from bdo_coupon_scanner.coupon import Coupon
@@ -22,34 +22,29 @@ class ArticleInfo:
 
 
 class OfficialSiteScanner(CouponScannerBase):
-    def __init__(self):
-        self.session = http.Session()
-        self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        })
-
     def get_scanner_name(self) -> str:
         return "Official Site Scanner"
 
-    def get_and_parse_page(self, link: str) -> bs.BeautifulSoup:
+    async def get_and_parse_page(self, session: aiohttp.ClientSession, link: str) -> bs.BeautifulSoup:
         log = logging.getLogger(__name__)
         log.debug(f"Getting and parsing page '{link}'...")
-        # Use self.session instead of http.get
-        response = self.session.get(link)
-        response.raise_for_status()
-        return bs.BeautifulSoup(response.text, features="html.parser")
+        async with session.get(link) as response:
+            response.raise_for_status()
+            text = await response.text()
+            return bs.BeautifulSoup(text, features="html.parser")
 
-    def get_articles(self) -> Iterable[ArticleInfo]:
+    async def get_articles(self, session: aiohttp.ClientSession) -> Iterable[ArticleInfo]:
         log = logging.getLogger(__name__)
         log.debug("Getting articles...")
 
-        page = self.get_and_parse_page(ANNOUNCEMENTS_URL)
+        page = await self.get_and_parse_page(session, ANNOUNCEMENTS_URL)
 
         updates_list = page.find("ul", attrs={"class": "thumb_nail_list"})
         if not updates_list:
             raise Exception("Could not find updates list!")
 
         children = updates_list.children
+        articles = []
         for list_element in children:
             if list_element == "\n":
                 continue
@@ -64,36 +59,41 @@ class OfficialSiteScanner(CouponScannerBase):
             # We strip it out to be safe.
             clean_date_str = date_str.replace("(UTC)", "").strip()
             date = date_parser.parse(clean_date_str).date()
-            yield ArticleInfo(article_link, date)
+            articles.append(ArticleInfo(article_link, date))
+        return articles
 
     # Check a single event article for codes
-    def check_article(self, article_info: ArticleInfo) -> Iterable[Coupon]:
+    async def check_article(self, session: aiohttp.ClientSession, article_info: ArticleInfo) -> List[Coupon]:
         log = logging.getLogger(__name__)
         log.debug(f"Scanning arcticle: {article_info.article_link}")
 
-        page = self.get_and_parse_page(article_info.article_link)
+        try:
+            page = await self.get_and_parse_page(session, article_info.article_link)
 
-        # Find the main content area
-        content_area = page.find("div", attrs={"class": "contents_area"})
-        if not content_area:
-            log.warning(
-                f"Could not find content area in article: {article_info.article_link}"
-            )
+            # Find the main content area
+            content_area = page.find("div", attrs={"class": "contents_area"})
+            if not content_area:
+                log.warning(
+                    f"Could not find content area in article: {article_info.article_link}"
+                )
+                return []
+            section_text = content_area.get_text()
+
+            codes = []
+            for code in CODE_REGEX.finditer(section_text):
+                codes.append(
+                    Coupon(code.group(), article_info.date, article_info.article_link)
+                )
+            return codes
+        except Exception as e:
+            log.error(f"Failed to parse article {article_info.article_link}: {e}")
             return []
-        section_text = content_area.get_text()
-
-        codes = []
-        for code in CODE_REGEX.finditer(section_text):
-            codes.append(
-                Coupon(code.group(), article_info.date, article_info.article_link)
-            )
-        return codes
 
     # Scans the "all currently available coupons" article, that gets updated more or less daily.
-    def check_coupon_list_article(self) -> Iterable[Coupon]:
+    async def check_coupon_list_article(self, session: aiohttp.ClientSession) -> List[Coupon]:
         ARTICLE_URL = "https://www.naeu.playblackdesert.com/en-US/News/Detail?groupContentNo=5676&countryType=en-US"
 
-        page = self.get_and_parse_page(ARTICLE_URL)
+        page = await self.get_and_parse_page(session, ARTICLE_URL)
 
         article_date_str = page.find("span", attrs={"class": "date"}).text # pyright: ignore[reportOptionalMemberAccess]
 
@@ -109,44 +109,50 @@ class OfficialSiteScanner(CouponScannerBase):
             )
         return codes
 
-    def get_codes(self) -> Iterable[Coupon]:
-        try:
-            log = logging.getLogger(__name__)
-            log.debug("Scanning for site codes...")
+    async def get_codes(self) -> Iterable[Coupon]:
+        log = logging.getLogger(__name__)
+        log.debug("Scanning for site codes...")
 
+        try:
             seen_codes = set()
             unique_coupons = []
 
-            try:
-                main_list_coupons = self.check_coupon_list_article()
-                for coupon in main_list_coupons:
-                    if coupon.code not in seen_codes:
-                        seen_codes.add(coupon.code)
-                        unique_coupons.append(coupon)
-            except Exception as e:
-                log.error(f"Failed to parse main coupon list: {e}")
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
 
-            articles = self.get_articles()
-            with futures.ThreadPoolExecutor() as executor:
-                # Submit all tasks immediately
-                future_to_article = {
-                    executor.submit(self.check_article, article): article
-                    for article in articles
-                }
+            async with aiohttp.ClientSession(headers=headers) as session:
+                try:
+                    main_list_coupons = await self.check_coupon_list_article(session)
+                    for coupon in main_list_coupons:
+                        if coupon.code not in seen_codes:
+                            seen_codes.add(coupon.code)
+                            unique_coupons.append(coupon)
+                except Exception as e:
+                    log.error(f"Failed to parse main coupon list: {e}")
 
-                # Process them as they finish (out of order)
-                for future in futures.as_completed(future_to_article):
-                    try:
-                        coupons = future.result()
-                        for coupon in coupons:
+                try:
+                    articles = await self.get_articles(session)
+
+                    tasks = [self.check_article(session, article) for article in articles]
+                    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                    for result in results:
+                        if isinstance(result, BaseException):
+                            log.error(f"Error in article task: {result}")
+                            continue
+
+                        for coupon in result:
                             if coupon.code not in seen_codes:
                                 seen_codes.add(coupon.code)
                                 unique_coupons.append(coupon)
-                    except Exception as e:
-                        log.error(f"Failed to parse article: {e}")
+
+                except Exception as e:
+                    log.error(f"Failed to fetch/process articles: {e}")
 
             return unique_coupons
-        except TimeoutError:
+        except asyncio.TimeoutError:
             raise ScannerTimeoutError
-        except Exception:
+        except Exception as e:
+            log.error(f"Site scanner fatal error: {e}")
             raise ScannerError

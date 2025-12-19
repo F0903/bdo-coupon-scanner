@@ -10,5 +10,5 @@ class CouponScannerBase:
     def get_scanner_name(self) -> str:
         raise NotImplementedError()
 
-    def get_codes(self) -> Iterable[Coupon]:
+    async def get_codes(self) -> Iterable[Coupon]:
         raise NotImplementedError()
