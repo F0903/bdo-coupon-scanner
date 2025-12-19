@@ -1,11 +1,16 @@
-from typing import Iterable
 import logging
-import datetime
+from datetime import datetime
+from typing import Iterable
+
 import selenium.webdriver as web
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from ..coupon import Coupon
 from .scanner_base import CouponScannerBase
 from .scanner_error import ScannerError, ScannerTimeoutError
-from ..coupon import Coupon
 
 CODES_URL = "https://garmoth.com/coupons"
 
@@ -15,11 +20,10 @@ class GarmothScanner(CouponScannerBase):
         return "Garmoth Scanner"
 
     def get_codes(self) -> Iterable[Coupon]:
+        log = logging.getLogger(__name__)
+        log.debug("Scanning Garmoth...")
+
         try:
-            log = logging.getLogger(__name__)
-
-            log.debug(f"Scanning Garmoth...")
-
             firefox_options = web.FirefoxOptions()
             firefox_options.add_argument("--headless")
             firefox_options.add_argument("window-size=1280,800")
@@ -27,11 +31,13 @@ class GarmothScanner(CouponScannerBase):
                 "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
             )
 
+            # Loading optimizations
+            firefox_options.set_preference("permissions.default.image", 2)
+            firefox_options.set_preference("permissions.default.stylesheet", 2)
+            firefox_options.page_load_strategy = 'eager'
+
             WAIT_TIMEOUT = 30  # seconds
             with web.Firefox(firefox_options) as browser:
-                browser.set_script_timeout(WAIT_TIMEOUT)
-                browser.implicitly_wait(WAIT_TIMEOUT)
-
                 # Remove navigator.webdriver Flag using JavaScript
                 browser.execute_script(
                     "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
@@ -39,29 +45,32 @@ class GarmothScanner(CouponScannerBase):
 
                 browser.get(CODES_URL)
 
-                # If the page has a cookie consent banner, accept it
-                browser.implicitly_wait(1)  # Short wait for cookie check
-                cookie_button = browser.find_elements(
-                    By.CSS_SELECTOR, "button#accept-cookies"
-                )
-                if cookie_button:
-                    cookie_button[0].click()
-                browser.implicitly_wait(WAIT_TIMEOUT)  # Restore wait
+                try:
+                    # Short explicit wait for cookie button, ignore if not found
+                    cookie_button = WebDriverWait(browser, 2).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, "button#accept-cookies"))
+                    )
+                    cookie_button.click()
+                except Exception:
+                    pass # Cookie banner might not appear or logic failed, proceed anyway
 
-                # The first section is the "Available" section
-                available_coupons_section = browser.find_element(
-                    By.CSS_SELECTOR, "section"
+                coupon_containers = WebDriverWait(browser, WAIT_TIMEOUT).until(
+                     lambda d: d.find_elements(By.CSS_SELECTOR, "section input[id]")
                 )
-                coupon_containers = available_coupons_section.find_elements(
-                    By.CSS_SELECTOR, "input[id]"
-                )
+
+                if not coupon_containers:
+                     # Fallback check if the lambda returned an empty list but didn't timeout (rare)
+                     log.warning("No coupon containers found on Garmoth.")
+                     return []
 
                 for container in coupon_containers:
                     id_attr = container.get_attribute("id")
                     if not id_attr:
                         continue
-                    yield Coupon(id_attr, datetime.date.today(), CODES_URL)
-        except TimeoutError:
+                    yield Coupon(id_attr, datetime.now(), CODES_URL)
+
+        except TimeoutException:
             raise ScannerTimeoutError
-        except Exception:
+        except Exception as e:
+            log.error(f"Garmoth scanner failed: {e}")
             raise ScannerError

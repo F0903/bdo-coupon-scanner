@@ -1,12 +1,9 @@
 import time
 import traceback
 
-from bdo_coupon_scanner.coupon import ensure_coupon_format
+from .scanners.garmoth_scanner import GarmothScanner
 from .scanners.scanner_base import CouponScannerBase
 from .scanners.site_scanner import OfficialSiteScanner
-from .scanners.garmoth_scanner import GarmothScanner
-
-""" from .scanners.twitter_scanner import TwitterScanner """
 
 
 def scan(scanner: CouponScannerBase):

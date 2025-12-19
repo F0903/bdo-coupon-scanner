@@ -1,16 +1,16 @@
 [tool.poetry]
 name = "bdo-coupon-scanner"
-version = "0.5.1"
+version = "1.0.0"
 description = "A library that scans for Black Desert Online coupon codes."
 authors = ["Frederik P. <frepbh@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9 <4.0"
+python = ">=3.10 <4.0"
 snscrape = "^0.7.0.2"
-selenium = "^4.34"
-
+selenium = "^4.36"
+python-dateutil = "^2.9.0.post0"
 
 [build-system]
 requires = ["poetry-core"]

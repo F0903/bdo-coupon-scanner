@@ -1,5 +1,5 @@
-from typing import Iterable
 import re
+from typing import Iterable
 
 from bdo_coupon_scanner.coupon import Coupon
 
